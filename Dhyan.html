@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SANSKRIT SOLVER PRO: TIME EDITION</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100;400;700;800&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* =========================================
+           1. RESET & VARIABLES (TIME THEME)
+           ========================================= */
+        :root {
+            --hue: 220;
+            --primary: hsl(var(--hue), 100%, 50%);
+            --primary-dim: hsl(var(--hue), 100%, 10%);
+            --accent: #00f3ff;
+            --text-main: #e0f2fe;
+            --text-muted: #94a3b8;
+            --bg-color: #030712;
+            /* Glass Variables */
+            --card-bg: rgba(15, 23, 42, 0.4); 
+            --card-border: rgba(255, 255, 255, 0.1);
+            --font-mono: 'JetBrains Mono', monospace;
+            --font-display: 'Rajdhani', sans-serif;
+        }
+
+        /* Matrix Theme Override */
+        [data-theme="matrix"] {
+            --hue: 120;
+            --accent: #0f0;
+            --bg-color: #000;
+            --card-bg: rgba(0, 20, 0, 0.6);
+            --card-border: rgba(0, 255, 0, 0.3);
+            --text-main: #0f0;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-display);
+            overflow-x: hidden;
+            min-height: 100vh;
+            cursor: default;
+        }
+
+        /* =========================================
+           2. MESH GRADIENT BACKGROUND
+           ========================================= */
+        .background-mesh {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -1;
+            background: radial-gradient(at 0% 0%, #000 0, transparent 50%), 
+                        radial-gradient(at 50% 100%, #0a0a20 0, transparent 50%);
+            overflow: hidden;
+        }
+
+        .blob {
+            position: absolute;
+            filter: blur(80px);
+            z-index: -1;
+            opacity: 0.5;
+            animation: floatBlob 10s infinite ease-in-out;
+            border-radius: 50%;
+        }
+
+        .blob-1 { top: 10%; left: 10%; width: 400px; height: 400px; background: #1e3a8a; animation-delay: 0s; }
+        .blob-2 { bottom: 20%; right: 10%; width: 500px; height: 500px; background: #4c1d95; animation-delay: -2s; }
+        .blob-3 { top: 40%; left: 40%; width: 300px; height: 300px; background: #00f3ff; opacity: 0.2; animation-delay: -4s; }
+
+        @keyframes floatBlob {
+            0% { transform: translate(0px, 0px) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0px, 0px) scale(1); }
+        }
+
+        /* =========================================
+           3. LOADING SCREEN
+           ========================================= */
+        #boot-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: var(--font-mono);
+            padding: 2rem;
+        }
+
+        .boot-text {
+            color: var(--accent);
+            font-size: 14px;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 5px;
+            opacity: 0;
+            animation: textFlicker 0.1s infinite;
+        }
+
+        .loader-bar {
+            width: 300px;
+            height: 4px;
+            background: #333;
+            margin-top: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loader-progress {
+            position: absolute;
+            top: 0; left: 0; height: 100%;
+            background: var(--accent);
+            width: 0%;
+            box-shadow: 0 0 10px var(--accent);
+            transition: width 0.2s;
+        }
+
+        /* =========================================
+           4. HUD & CURSOR
+           ========================================= */
+        #cursor-ring { 
+            position: fixed;
+            top: 0; left: 0;
+            width: 40px; height: 40px; 
+            border: 1px solid var(--accent); 
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10000;
+            transform: translate(-50%, -50%);
+            transition: width 0.2s, height 0.2s, background 0.2s, left 0.1s ease-out, top 0.1s ease-out;
+            mix-blend-mode: difference;
+        }
+
+        .hud-line {
+            position: fixed;
+            background: var(--card-border);
+            z-index: 50;
+        }
+        .hud-top { top: 60px; left: 0; width: 100%; height: 1px; }
+        .hud-left { top: 0; left: 60px; height: 100%; width: 1px; }
+        
+        .hud-stats {
+            position: fixed;
+            top: 20px; right: 20px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--accent);
+            z-index: 100;
+            text-align: right;
+        }
+
+        .progress-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 3px;
+            z-index: 1000;
+            background: transparent;
+        }
+        .scroll-progress {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            box-shadow: 0 0 15px var(--accent);
+        }
+
+        /* =========================================
+           5. NAVIGATION SIDEBAR
+           ========================================= */
+        .sidebar {
+            position: fixed;
+            left: 0; top: 50%;
+            transform: translateY(-50%);
+            width: 60px;
+            z-index: 900;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .nav-dot {
+            width: 10px; height: 10px;
+            background: var(--card-border);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: 0.3s;
+            position: relative;
+        }
+        
+        .nav-dot:hover, .nav-dot.active {
+            background: var(--accent);
+            box-shadow: 0 0 10px var(--accent);
+            transform: scale(1.5);
+        }
+
+        .nav-tooltip {
+            position: absolute;
+            left: 25px;
+            background: var(--primary-dim);
+            padding: 5px 10px;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            font-size: 10px;
+            font-family: var(--font-mono);
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.3s;
+            white-space: nowrap;
+        }
+        .nav-dot:hover .nav-tooltip { opacity: 1; left: 30px; }
+
+        /* =========================================
+           6. MAIN CONTENT
+           ========================================= */
+        .wrapper {
+            margin-left: 80px;
+            padding: 100px 40px;
+            max-width: 1000px;
+            margin-right: auto;
+            position: relative;
+        }
+
+        header {
+            margin-bottom: 80px;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 4rem;
+            text-transform: uppercase;
+            line-height: 1;
+            margin-bottom: 10px;
+            color: #fff;
+            text-shadow: 0 0 20px var(--primary);
+        }
+        
+        .sub-header {
+            display: flex;
+            justify-content: space-between;
+            font-family: var(--font-mono);
+            color: var(--accent);
+            font-size: 0.9rem;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            color: #fff;
+            margin: 60px 0 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .section-badge {
+            background: var(--accent);
+            color: #000;
+            font-weight: 800;
+            padding: 2px 10px;
+            font-size: 1rem;
+            transform: skew(-10deg);
+        }
+
+        /* =========================================
+           7. 3D TILT GLASS CARDS
+           ========================================= */
+        .q-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            margin-bottom: 25px;
+            padding: 30px;
+            position: relative;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 12px;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+            transition: opacity 0.6s ease, transform 0.1s ease-out;
+            overflow: hidden;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .question, .answer, .q-num {
+            transform: translateZ(20px);
+        }
+
+        .q-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 4px; height: 100%;
+            background: var(--card-border);
+            transition: 0.4s;
+        }
+
+        .q-card:hover {
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .q-card:hover::before {
+            background: var(--accent);
+            box-shadow: 0 0 15px var(--accent);
+        }
+
+        .q-num {
+            position: absolute;
+            right: 20px; top: 20px;
+            font-family: var(--font-mono);
+            color: var(--card-border);
+            font-size: 3rem;
+            opacity: 0.2;
+            font-weight: 800;
+        }
+
+        .question {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            font-weight: 700;
+            max-width: 90%;
+            color: #fff;
+            line-height: 1.4;
+        }
+
+        .answer {
+            font-family: 'Poppins', sans-serif; /* Better for Gujarati */
+            font-size: 1rem;
+            color: var(--text-muted);
+            border-left: 2px solid var(--card-border);
+            padding-left: 20px;
+            line-height: 1.8;
+        }
+
+        .answer strong { color: var(--accent); }
+
+        .settings-panel {
+            position: fixed;
+            bottom: 20px; right: 20px;
+            z-index: 2000;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            background: rgba(0,0,0,0.8);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 10px 20px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+        }
+
+        .btn:hover {
+            background: var(--accent);
+            color: #000;
+            box-shadow: 0 0 20px var(--accent);
+        }
+
+        @keyframes textFlicker {
+            0% { opacity: 0.1; }
+            20% { opacity: 1; }
+            40% { opacity: 0.1; }
+            60% { opacity: 1; }
+            80% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .reveal-up {
+            opacity: 0;
+            transform: translateY(100px);
+            transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .reveal-up.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="boot-screen">
+        <div class="boot-text">INITIALIZING ANCIENT SCRIPTS...</div>
+        <div class="boot-text">DECODING SANSKRIT DATA... [OK]</div>
+        <div class="boot-text">LOADING TRANSLATIONS... [OK]</div>
+        <div class="boot-text">OPTIMIZING DISPLAY...</div>
+        <div class="boot-text">ACCESS GRANTED.</div>
+        <div class="loader-bar"><div class="loader-progress" id="load-bar"></div></div>
+    </div>
+
+    <div class="background-mesh">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div id="cursor-ring"></div>
+    
+    <div class="progress-container"><div class="scroll-progress" id="scroll-bar"></div></div>
+    <div class="hud-line hud-top"></div>
+    <div class="hud-line hud-left"></div>
+    <div class="hud-stats" id="hud-clock">SYSTEM TIME: 00:00:00<br>FPS: 60</div>
+
+    <div class="sidebar">
+        <div class="nav-dot active" onclick="scrollToId('sec-a')"><div class="nav-tooltip">SEC-A (GADYA)</div></div>
+        <div class="nav-dot" onclick="scrollToId('sec-b')"><div class="nav-tooltip">SEC-B (PADYA)</div></div>
+        <div class="nav-dot" onclick="scrollToId('sec-c')"><div class="nav-tooltip">SEC-C (NATYA)</div></div>
+        <div class="nav-dot" onclick="scrollToId('sec-d')"><div class="nav-tooltip">SEC-D (VYAKARAN)</div></div>
+        <div class="nav-dot" onclick="scrollToId('sec-e')"><div class="nav-tooltip">SEC-E (MIXED)</div></div>
+    </div>
+
+    <div class="settings-panel">
+        <button class="btn" onclick="toggleTheme()">SWITCH THEME</button>
+        <button class="btn" onclick="window.print()">PRINT PAPER</button>
+    </div>
+
+    <div class="wrapper">
+        
+        <header>
+            <h1 id="main-title" data-value="SOLVED PAPER: SANSKRIT">SOLVED PAPER: SANSKRIT</h1>
+            <div class="sub-header">
+                <span>CLASS: 10 (GSEB)</span>
+                <span>SUBJECT: SANSKRIT (017)</span>
+                <span>STATUS: VERIFIED</span>
+            </div>
+        </header>
+
+        <div id="sec-a">
+            <h2 class="section-title reveal-up"><span class="section-badge">SEC-A</span> GADYA VIBHAG (PROSE)</h2>
+            
+            <div class="q-card reveal-up">
+                <span class="q-num">01</span>
+                <div class="question">ગદ્યખંડનો અનુવાદ (પુરા એકસ્મિન જલાશયે...)</div>
+                <div class="answer">
+                    પહેલાં એક જળાશયમાં અનાગતવિધાતા, પ્રત્યુત્પન્નમતિ અને યદભવિષ્ય નામના ત્રણ માછલાં રહેતા હતા. અથ કદાચિત્ (હવે એકવાર) તે જળાશયને જોઈને માછીમારો બોલ્યા - "અરે! આ જળાશય તો ઘણા માછલાંઓ વાળું છે. ક્યારેય આપણે આવું જોયું (શોધ્યું) નહોતું. તો આજે આહારની વ્યવસ્થા થઈ ગઈ છે. આવતીકાલે અહીં આવીને માછલાં, કાચબા વગેરેને મારી નાખીશું એવો નિશ્ચય કર્યો."
+                </div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">OR/02</span>
+                <div class="question">ગદ્યખંડનો અનુવાદ (સંસારે વિવિધા: પદાર્થા: સન્તિ...)</div>
+                <div class="answer">
+                    સંસારમાં જાતજાતના પદાર્થો છે. જેમ કે - સોનું, લોખંડ વગેરે ધાતુઓ, વડ, ખેર વગેરે વૃક્ષો, ગાય, ઘોડા વગેરે પશુઓ. આ બધામાં દરેક પદાર્થ ભિન્ન ભિન્ન હોય છે. જેમ કે સોનું લોખંડથી જુદું હોય છે. વળી દરેક સોનાના ટુકડા પણ પરસ્પર આકાર અને પ્રકારથી ભિન્ન ભિન્ન હોય છે.
+                </div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">03</span>
+                <div class="question">ભોજસ્ય કીર્તિ: કેન આસીત્? (ભોજની કીર્તિ શેનાથી હતી?)</div>
+                <div class="answer"><strong>(B) ભોજવ્યાકરણેન</strong> (ભોજવ્યાકરણથી)</div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">04</span>
+                <div class="question">આહારાદય: ______ ભવન્તિ |</div>
+                <div class="answer"><strong>(B) સેવનીયા:</strong> (સેવવા યોગ્ય)</div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">05</span>
+                <div class="question">સરોવરસ્ય જલં કીદૃશમ્ આસીત્?</div>
+                <div class="answer"><strong>(C) સગરં</strong> (ઝેરી/વિષવાળું)</div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">06</span>
+                <div class="question">ગુણવતી કન્યા શું વેચે છે અને તેનાથી શું મેળવે છે?</div>
+                <div class="answer">ગુણવતી કન્યા ડાંગરના ફોતરાં વેચે છે અને તેમાંથી જે ધન મળે છે તેનાથી લાકડાં ખરીદે છે/મેળવે છે.</div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">07</span>
+                <div class="question">સાચું સુખ મેળવવા માટે કોણ યોગ્ય નથી?</div>
+                <div class="answer">જે માણસો પોતાની શક્તિનું અતિક્રમણ કરીને (ગજા બહારનું) કામ કરે છે, તેઓ સાચું સુખ મેળવવા માટે યોગ્ય નથી (તેઓ નાશ પામે છે).</div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">08</span>
+                <div class="question">અજાણ્યા પુરુષના પુત્રની શી દશા થઈ હતી?</div>
+                <div class="answer">અજાણ્યા પુરુષનો પુત્ર યુદ્ધના કારણે થયેલા વિનાશમાં તરસ્યો થયો હતો અને ઝેરી પાણી પીવાથી તેની દૃષ્ટિ ચાલી ગઈ હતી (તે આંધળો થયો હતો) અને તે ખાડામાં પડ્યો હતો.</div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">09</span>
+                <div class="question">ટૂંકનોંધ: આવર્તપાત નામનું વિઘ્ન</div>
+                <div class="answer">
+                    વમળમાં ફસાવું. લાકડા માટે જેમ વમળમાં ફસાવું વિઘ્ન છે, તેમ માણસ સુખ-સગવડમાં ફસાય તો તે સંસારસાગર તરી શકતો નથી.
+                </div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">10</span>
+                <div class="question">ટૂંકનોંધ: ક્રોધની શારીરિક અસરો</div>
+                <div class="answer">
+                    ક્રોધથી પહેલા આંખ લાલ થાય છે, પછી ભ્રમર તંગ થાય છે. પહેલા વિદ્યા નાશ પામે છે, હોઠ ફરકે છે અને શરીર ધ્રૂજે છે.
+                </div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">11</span>
+                <div class="question">ફકરા પરથી સંસ્કૃત પ્રશ્નો (ગુરુ: શિષ્યેણ સહ...)</div>
+                <div class="answer">
+                    (A) गुरुः <strong>गङ्गातीरे</strong> शिष्येण सह वर्तमानः आसीत् |<br>
+                    (B) गुरुः शिष्यं <strong>काष्ठखण्डम्</strong> अदर्शयत् |<br>
+                    (C) अयम् काष्ठखण्डः <strong>जलप्रवाहेण</strong> सह समुद्रं प्राप्स्यति |<br>
+                    (D) गमनमार्गे <strong>चत्वारः</strong> विघ्नाः भवेयुः |
+                </div>
+            </div>
+        </div>
+
+        <div id="sec-b">
+            <h2 class="section-title reveal-up"><span class="section-badge">SEC-B</span> PADYA VIBHAG (POETRY)</h2>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">12</span>
+                <div class="question">શ્લોક અનુવાદ (તૈલં મર્દય કાયે ત્વં...)</div>
+                <div class="answer">
+                    તું શરીર પર તેલનું માલિશ કર. પછી સ્નાન કર. વિધિપૂર્વક પાણીથી પોતાનું વસ્ત્ર બરાબર ધોઈ નાખ. પૂર્વ દિશા તરફ મુખ કરીને બેઠેલો તું સંધ્યાવિધિ કર. અને હંમેશા માતા-પિતાને વંદન કર અને સવારનો નાસ્તો કર.
+                </div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">OR/13</span>
+                <div class="question">શ્લોક અનુવાદ (શિક્ષા ક્ષયં ગચ્છતિ...)</div>
+                <div class="answer">
+                    સમય વીતતા કેળવણી (શિક્ષા) નાશ પામે છે. ખૂબ મજબૂત મૂળવાળા વૃક્ષો પણ પડી જાય છે. જળાશયમાં રહેલું પાણી પણ સુકાઈ જાય છે. પરંતુ (યજ્ઞમાં) હોમેલું અને (દાનમાં) આપેલું - તે બંને તેમનું તેમ જ રહે છે.
+                </div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">14</span>
+                <div class="question">કવિ: કે યાચતે? (કવિ શું માંગે છે?)</div>
+                <div class="answer"><strong>(A) ભદ્રમ્</strong> (કલ્યાણ)</div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">15</span>
+                <div class="question">કાર્ય પ્રારંભ્ય કે ન પરિત્યજન્તિ?</div>
+                <div class="answer"><strong>(C) ઉત્તમજના:</strong> (ઉત્તમ માણસો)</div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">16</span>
+                <div class="question">કા નદી ત્વરિતા વહતિ?</div>
+                <div class="answer"><strong>(C) નર્મદા</strong></div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">17</span>
+                <div class="question">ઋષિ સૂર્યપાસે શાની યાચના કરે છે?</div>
+                <div class="answer">ઋષિ સૂર્યદેવ પાસે યાચના કરે છે કે - હે દેવ! સર્વ દુષ્કર્મોને (દુર્ગુણોને) દૂર કરો અને જે શુભ (કલ્યાણકારી) હોય તે અમને પ્રાપ્ત કરાવો.</div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">18</span>
+                <div class="question">જટાયુ પાસે કયા આયુધો હતા?</div>
+                <div class="answer">જટાયુ પાસે તીક્ષ્ણ નખ, પાંખો અને ચાંચ સિવાય બીજા કોઈ આયુધો નહોતા. (તેના નખ અને ચાંચ જ તેના આયુધ હતા).</div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">19</span>
+                <div class="question">ભક્ત કઈ કઈ પરિસ્થિતિમાં માતાને રક્ષણ કરવા પ્રાર્થે છે?</div>
+                <div class="answer">ભક્ત વિવાદમાં, દુઃખમાં (વિષાદમાં), આળસમાં, મુસાફરીમાં, પાણીમાં, આગમાં, પર્વત પર અને શત્રુઓની વચ્ચે - માતાને રક્ષણ કરવા પ્રાર્થે છે.</div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">20</span>
+                <div class="question">ગુરુ કેવા હોવા જોઈએ?</div>
+                <div class="answer">ગુરુ અધિગત તત્વજ્ઞાન વાળા (જ્ઞાની), સત્ય બોલનારા અને શિષ્યના હિતમાં તત્પર હોવા જોઈએ.</div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">21-23</span>
+                <div class="question">શ્લોક પૂર્તિ</div>
+                <div class="answer">
+                    <strong>21)</strong> સર્વે ભવન્તુ સુખિનઃ સર્વે સન્તુ નિરામયાઃ |<br>
+                    સર્વે ભદ્રાણિ પશ્યન્તુ મા કશ્ચિદ્ દુઃખ ભાગ્ભવેત્ ||<br><br>
+
+                    <strong>22)</strong> વિવાદે વિષાદે પ્રમાદે પ્રવાસે |<br>
+                    જલે ચાનલે પર્વતે શત્રુમધ્યે ||<br>
+                    અરણ્યે શરણ્યે સદા માં પ્રપાદિ |<br>
+                    ગતિસ્ત્વં ગતિસ્ત્વં ત્વમેકા ભવાનિ ||<br><br>
+
+                    <strong>23)</strong> કર્મણ્યેવાધિકારસ્તે મા ફલેષુ કદાચન |<br>
+                    મા કર્મફલહેતુર્ભૂ: મા તે સંગોડસ્તવકર્મણિ ||
+                </div>
+            </div>
+        </div>
+
+        <div id="sec-c">
+            <h2 class="section-title reveal-up"><span class="section-badge">SEC-C</span> NATYA VIBHAG (DRAMA)</h2>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">24</span>
+                <div class="question">નાટ્યખંડનો અનુવાદ (ધૃતરાષ્ટ્ર: એહિ એહિ પુત્ર...)</div>
+                <div class="answer">
+                    <strong>ધૃતરાષ્ટ્ર:</strong> આવ, આવ પુત્ર.<br>
+                    <strong>ઘટોત્કચ:</strong> આપશ્રીનું કલ્યાણ હો! આ હું ઘટોત્કચ પિતામહને પ્રણામ કરું છું. ભગવાન ચક્રાયુધે (શ્રીકૃષ્ણે) કલ્યાણરૂપ વસ્તુઓના ઉદ્દભવસ્થાન એવા આપ પિતામહને કહ્યું છે...<br>
+                    <strong>ધૃતરાષ્ટ્ર:</strong> (આસન પરથી ઉભા થઈને) ભગવાન ચક્રાયુધની શું આજ્ઞા છે?<br>
+                    <strong>ઘટોત્કચ:</strong> ના, ના, ના. આસન પર બેસીને જ આપે શ્રીકૃષ્ણનો સંદેશ સાંભળવો જોઈએ.<br>
+                    <strong>ધૃતરાષ્ટ્ર:</strong> જેવી ભગવાન ચક્રાયુધની આજ્ઞા. (બેસી જાય છે).
+                </div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">OR/25</span>
+                <div class="question">નાટ્યખંડનો અનુવાદ (શાન્ડિલ્ય: ભો ભગવન્...)</div>
+                <div class="answer">
+                    <strong>શાન્ડિલ્ય:</strong> હે મહારાજ! આ ઉદ્યાન છે.<br>
+                    <strong>પરિવ્રાજક (સંન્યાસી):</strong> આગળ પ્રવેશ કર.<br>
+                    <strong>શાન્ડિલ્ય:</strong> ભગવાન જ પહેલા પ્રવેશ કરે. હું પાછળ પ્રવેશ કરું છું.<br>
+                    <strong>પરિવ્રાજક:</strong> શા માટે?<br>
+                    <strong>શાન્ડિલ્ય:</strong> પુરાણો જાણનારી મારી માતા પાસેથી મેં સાંભળ્યું છે કે અશોકના પાંદડા પાછળ સંતાયેલો વાઘ રહે છે. તેથી ભગવાન (આપ) જ પહેલા પ્રવેશો, હું પાછળ પ્રવેશું છું.
+                </div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">26-28</span>
+                <div class="question">વાક્ય કોણ બોલે છે? (Who said to whom)</div>
+                <div class="answer">
+                    26) અશ્વાન્ વિમુચ્ય બાણ યોગ્ય... &rarr; <strong>ઘટોત્કચ</strong> (શકુનિને કહે છે).<br>
+                    27) ચંદ્રગુપ્ત રાજ્યમિદં ન નન્દરાજ્યમ્ | &rarr; <strong>ચાણક્ય</strong><br>
+                    28) એહિ એહિ પુત્ર | &rarr; <strong>ધૃતરાષ્ટ્ર</strong>
+                </div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">29</span>
+                <div class="question">દુર્ઘટનાના સાક્ષી કોણ કોણ બને છે?</div>
+                <div class="answer">પથ્થર વગેરે જડ પદાર્થો, ગાય વગેરે પશુઓ અને મનુષ્યો.</div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">30</span>
+                <div class="question">ચાણક્ય ચંદનદાસને કઈ રીતે ભય બતાવે છે?</div>
+                <div class="answer">ચાણક્ય કહે છે કે રાજા ચંદ્રગુપ્ત અત્યંત કડક છે, તે અપરાધીને માફ નહીં કરે. જો તમે રાક્ષસના પરિવારને નહીં સોંપો તો તમારા અને તમારા પરિવારનો જીવ જોખમમાં મુકાશે.</div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">31</span>
+                <div class="question">વિદ્યાભ્યાસ શા માટે કરવો જોઈએ?</div>
+                <div class="answer">સત્ય અને અસત્યનો નિર્ણય કરવા માટે તેમજ સારા અને ખરાબને ઓળખવા માટે વિદ્યાભ્યાસ કરવો જોઈએ.</div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">32</span>
+                <div class="question">ટૂંકનોંધ: શ્રીકૃષ્ણ સંદેશ (વિગતવાર)</div>
+                <div class="answer">
+                    મહાકવિ ભાસ રચિત ‘દૂતઘટોત્કચમ્’ એકાંકીમાંથી આ પ્રસંગ લેવામાં આવ્યો છે. મહાભારતના યુદ્ધમાં અભિમન્યુના અન્યાયી વધ પછી અર્જુન કૌરવોનો વિનાશ કરવાનો સંકલ્પ કરે છે. આ સમયે શ્રીકૃષ્ણ યુદ્ધ અટકાવવાનો છેલ્લો પ્રયાસ કરવા ઘટોત્કચને દૂત બનાવીને ધૃતરાષ્ટ્રની સભામાં મોકલે છે. ઘટોત્કચ ભરી સભામાં શ્રીકૃષ્ણનો આ અંતિમ અને ચેતવણીરૂપ સંદેશ સંભળાવે છે.<br><br>
+                    શ્રીકૃષ્ણ કહે છે: <strong>"હે રાજાઓ, ધર્મનું આચરણ કરો, પોતાના બાંધવોની (સ્વજનોની) ચિંતા કરો અને જે કાંઈ તમારી ઈચ્છા હોય તે બધું અહીં પૃથ્વી પર કરી લો."</strong><br>
+                    વધુમાં ચેતવણી આપતા કહે છે કે, <strong>"આવતી કાલે સવારે સાક્ષાત્ યમરાજનું રૂપ ધારણ કરીને પાંડવો સૂર્યના કિરણોની સાથે તમારી પાસે આવી પહોંચશે."</strong><br>
+                    આ સંદેશમાં શ્રીકૃષ્ણની દૂરંદેશી અને શાંતિ સ્થાપવાનો પ્રયાસ દેખાય છે.
+                </div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">33</span>
+                <div class="question">ટૂંકનોંધ: આચાર્ય ચાણક્ય (વિગતવાર)</div>
+                <div class="answer">
+                    આચાર્ય ચાણક્ય મગધ રાજ્યના મહાન મંત્રી અને ચંદ્રગુપ્ત મૌર્યના ગુરુ હતા. તેઓ પોતાની તીક્ષ્ણ બુદ્ધિ, કૂટનીતિ અને કઠોર શાસન વ્યવસ્થા માટે જાણીતા હતા. નંદ વંશનો નાશ કરીને તેમણે ચંદ્રગુપ્તને ગાદી પર બેસાડ્યો હતો.<br><br>
+                    પાઠ 'ચાણક્ય-ચંદનદાસ સંવાદ'માં ચાણક્યની વફાદારી અને રાજનીતિ જોવા મળે છે. તેઓ અમાત્ય રાક્ષસને (જે નંદનો મંત્રી હતો) ચંદ્રગુપ્તના પક્ષમાં લાવવા માંગતા હતા. ચાણક્ય ચંદનદાસને ડરાવે છે, છતાં મનમાં ને મનમાં ચંદનદાસની મિત્રનિષ્ઠા જોઈને રાજી પણ થાય છે. ચાણક્યનો સ્વભાવ ઉપરથી કઠોર ("વજ્રાદપિ કઠોરાણિ") પણ અંદરથી ગુણગ્રાહી હતો.
+                </div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">34</span>
+                <div class="question">ટૂંકનોંધ: શાન્ડિલ્યએ કરેલું ઉદ્યાનનું વર્ણન</div>
+                <div class="answer">
+                    આ ટૂંકનોંધ 'સત્યં મયૂરઃ' પાઠના આધારે છે. શાન્ડિલ્ય એક ડરપોક શિષ્ય છે. જ્યારે તે ગુરુ સાથે બગીચામાં પ્રવેશ કરે છે ત્યારે વાઘના ડરથી આંખો બંધ કરી દે છે. પણ પછી મોર જોઈને ખુશ થાય છે.<br><br>
+                    શાન્ડિલ્ય ઉદ્યાનનું વર્ણન કરતા કહે છે કે, <strong>"આ ઉદ્યાન ચંપક, કદંબ, સપ્તપર્ણી, ચંદન, ટગર, ખેર અને કેળના વૃક્ષોથી આચ્છાદિત (છવાયેલું) છે."</strong> આ ઉદ્યાન લતાઓ અને મંડપોથી શોભી રહ્યું છે. કવિએ શાન્ડિલ્યના મુખે પ્રકૃતિનું રમણીય વર્ણન કરાવ્યું છે.
+                </div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">35-37</span>
+                <div class="question">કૌંસનો ઉપયોગ કરી વાક્ય બનાવો</div>
+                <div class="answer">
+                    35) કારણ વિના દુર્ઘટના થતી નથી. &rarr; <strong>કારણં વિના દુર્ઘટના ન ભવતિ |</strong><br>
+                    36) અમે ને હત્યારા નથી. &rarr; <strong>વયમ્ દૂતઘાતકા: ન |</strong><br>
+                    37) આપણા ત્રણ કર્તવ્ય છે. &rarr; <strong>અસ્માકં ત્રીણી કર્તવ્યાનિ સન્તિ |</strong>
+                </div>
+            </div>
+        </div>
+
+        <div id="sec-d">
+            <h2 class="section-title reveal-up"><span class="section-badge">SEC-D</span> VYAKARAN (GRAMMAR)</h2>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">38-52</span>
+                <div class="question">Grammar Answers</div>
+                <div class="answer">
+                    38) સમાનાર્થી: સમર &rarr; <strong>યુદ્ધમ્</strong><br>
+                    39) વિરુદ્ધાર્થી: નૂતન &rarr; <strong>પુરાણ (પ્રાચીન)</strong><br>
+                    40) સામાન્ય ભવિષ્યકાળ ઉ.પુ. એકવચન &rarr; <strong>વદિષ્યામિ</strong><br>
+                    41) આજ્ઞાર્થ અન્ય પુરુષ બહુવચન &rarr; <strong>જયન્તુ</strong><br>
+                    42) વિદ્યર્થ અન્ય પુરુષ બહુવચન &rarr; <strong>વદેયુ:</strong><br>
+                    43) સ્મ પ્રયોગ: જળાશયે ત્રયો મત્સ્યા: અવસન્ &rarr; <strong>જળાશયે ત્રયો મત્સ્યા: વસન્તિ સ્મ |</strong><br>
+                    44) પંચમી વિભક્તિ એકવચન &rarr; <strong>પરિવારાત્</strong><br>
+                    45) તૃતીયા વિભક્તિ એકવચન &rarr; <strong>ધનેન</strong><br>
+                    46) ઉપપદ વિભક્તિ (નમ:) &rarr; શ્રી <strong>ગણેશાય</strong> નમ:<br>
+                    47) સંખ્યા પદ &rarr; <strong>ચત્વાર:</strong> વિઘ્ના:<br>
+                    48) કૃદંત: પાતુમ્ &rarr; <strong>હેત્વર્થ કૃદંત</strong><br>
+                    49) સંધિ છોડો: માનવોડપિ &rarr; <strong>માનવ: + અપિ</strong><br>
+                    50) સંધિ જોડો: અર્જુન: + અપિ &rarr; <strong>અર્જુનોપિ</strong><br>
+                    51) સમાસ: યથાવિધિ &rarr; <strong>અવ્યયીભાવ</strong><br>
+                    52) સમાસ: ધવલકેશ &rarr; <strong>બહુવ્રીહિ</strong>
+                </div>
+            </div>
+        </div>
+
+        <div id="sec-e">
+            <h2 class="section-title reveal-up"><span class="section-badge">SEC-E</span> SANYUKTA (MIXED)</h2>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">53</span>
+                <div class="question">વાક્યોને ઘટનાક્રમ મુજબ ગોઠવો</div>
+                <div class="answer">
+                    1. (C) તસ્ય કૂટનાથ અભિધ: વૈશ્ય: પ્રાતિવેશિક: આસીત્ | (તેનો કૂટનાથ નામનો પાડોશી હતો).<br>
+                    2. (A) ભો વયસ્ય! એતાનિ પાત્રાણી મમ ન સન્તિ | (હે મિત્ર! આ વાસણો મારા નથી).<br>
+                    3. (B) જન્મ ભવતિ પાત્રાણાં મરણં સંશયઃ કથમ્ | (વાસણોનો જન્મ થાય તો મરણ કેમ ન થાય?).<br>
+                    4. (D) કૂટનાથઃ સશોકમ્ કથયત | (કૂટનાથે શોક સાથે કહ્યું).
+                </div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">54</span>
+                <div class="question">ગદ્યખંડ વાંચી સંસ્કૃત પ્રશ્નોના ઉત્તર</div>
+                <div class="answer">
+                    (A) સિંહના વાળ કોણે કાપ્યા? &rarr; <strong>મૂષક: (ઉંદરે)</strong><br>
+                    (B) ઉંદરે કેમ પ્રાર્થના કરી? &rarr; <strong>પ્રાણદાનાય (જીવ બચાવવા)</strong><br>
+                    (C) સિંહ ક્યાં પડ્યો? &rarr; <strong>જાલે (જાળમાં)</strong><br>
+                    (D) ઉંદરે કેવી રીતે મુક્ત કર્યો? &rarr; <strong>જાલં છિત્વા (જાળ કાપીને)</strong>
+                </div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">55-57</span>
+                <div class="question">જોડકાં</div>
+                <div class="answer">
+                    55) દંડી &rarr; <strong>દશકુમારચરિતમ્</strong><br>
+                    56) ભાસ &rarr; <strong>દૂતઘટોત્કચમ્</strong><br>
+                    57) કાલિદાસ &rarr; <strong>માલવિકાગ્નિમિત્રમ્</strong>
+                </div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">58</span>
+                <div class="question">રેખાંકિત પદો સુધારીને લખો</div>
+                <div class="answer">
+                    વિચાર પથં &rarr; <strong>વિચારપથમ્</strong><br>
+                    માલવિજયેન &rarr; <strong>માલવવિજયેન</strong><br>
+                    ગ્રંથાગારં &rarr; <strong>ગ્રંથાગાર:</strong>
+                </div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">59</span>
+                <div class="question">અર્થ વિસ્તાર (ચતુર્વિદ્યા ભજન્તે માં...)</div>
+                <div class="answer">
+                    <strong>અનુવાદ:</strong> હે ભરતવંશીઓમાં શ્રેષ્ઠ અર્જુન! ચાર પ્રકારના સદાચારી માણસો મને ભજે છે – (૧) આર્ત (દુઃખી), (૨) જિજ્ઞાસુ, (૩) અર્થાર્થી અને (૪) જ્ઞાની.<br><br>
+                    <strong>વિસ્તાર:</strong> શ્રીમદ ભગવદ્ ગીતામાં ભગવાન શ્રીકૃષ્ણ ભક્તોના ચાર પ્રકાર વર્ણવે છે.<br>
+                    1. <strong>આર્ત ભક્ત:</strong> જે મુસીબત વખતે ભગવાનને યાદ કરે (જેમ કે દ્રૌપદી).<br>
+                    2. <strong>જિજ્ઞાસુ ભક્ત:</strong> જે ઈશ્વરને જાણવાની ઈચ્છા રાખે.<br>
+                    3. <strong>અર્થાર્થી ભક્ત:</strong> જે ધન, વૈભવ કે સુખ મેળવવા ભક્તિ કરે.<br>
+                    4. <strong>જ્ઞાની ભક્ત:</strong> આ સર્વશ્રેષ્ઠ છે. તે કોઈ અપેક્ષા વગર માત્ર પ્રેમથી ઈશ્વરને ભજે છે (જેમ કે નરસિંહ મહેતા).
+                </div>
+            </div>
+
+            <div class="q-card reveal-up">
+                <span class="q-num">OR/60</span>
+                <div class="question">અર્થ વિસ્તાર (વજ્રાદપિ કઠોરાણિ...)</div>
+                <div class="answer">
+                    <strong>અનુવાદ:</strong> સામાન્ય લોકો કરતાં ચડિયાતા (મહાપુરુષો)ના મન વજ્ર કરતાં પણ કઠોર અને ફૂલ કરતાં પણ કોમળ હોય છે. ખરેખર, તેમના મનને જાણવા માટે કોણ સમર્થ છે?<br><br>
+                    <strong>વિસ્તાર:</strong> 'ઉત્તરરામચરિત'માં આ શ્લોક આવે છે. મહાપુરુષોનું વ્યક્તિત્વ બેધારી તલવાર જેવું હોય છે.<br>
+                    જ્યારે 'ન્યાય' કે 'ધર્મ'ની વાત આવે ત્યારે તેઓ <strong>વજ્ર કરતાં કઠોર</strong> બને છે. (ઉદાહરણ: રામે સીતાનો ત્યાગ કર્યો).<br>
+                    પરંતુ, જ્યારે કોઈના દુઃખ કે કરુણાની વાત આવે ત્યારે તેઓ <strong>ફૂલ કરતાં કોમળ</strong> બની જાય છે. (ઉદાહરણ: સીતાના વિરહમાં રામ રડ્યા).<br>
+                    <strong>બોધ:</strong> મહાપુરુષો સમય અને સંજોગ મુજબ કઠોરતા અને કોમળતાનું સંતુલન જાળવી જાણે છે.
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 1. BOOT SEQUENCE ---
+        window.addEventListener('load', () => {
+            const bar = document.getElementById('load-bar');
+            const screen = document.getElementById('boot-screen');
+            let width = 0;
+            const interval = setInterval(() => {
+                width += Math.random() * 5;
+                if(width >= 100) {
+                    width = 100;
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        screen.style.opacity = '0';
+                        setTimeout(() => screen.style.display = 'none', 500);
+                        initTypewriter();
+                    }, 500);
+                }
+                bar.style.width = width + '%';
+            }, 50);
+        });
+
+        // --- 2. MAGNETIC RING CURSOR FOLLOWER ---
+        const ring = document.getElementById('cursor-ring');
+        
+        window.addEventListener('mousemove', e => {
+            setTimeout(() => {
+                ring.style.left = e.clientX + 'px';
+                ring.style.top = e.clientY + 'px';
+            }, 80);
+        });
+
+        document.addEventListener('mousedown', () => ring.style.transform = 'translate(-50%, -50%) scale(0.8)');
+        document.addEventListener('mouseup', () => ring.style.transform = 'translate(-50%, -50%) scale(1)');
+
+        document.querySelectorAll('a, button, .q-card, .nav-dot').forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                ring.style.width = '60px';
+                ring.style.height = '60px';
+                ring.style.background = 'rgba(0, 243, 255, 0.2)';
+            });
+            el.addEventListener('mouseleave', () => {
+                ring.style.width = '40px';
+                ring.style.height = '40px';
+                ring.style.background = 'transparent';
+            });
+        });
+
+        // --- 3. 3D TILT PHYSICS ---
+        document.querySelectorAll('.q-card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                const rotateX = ((y - centerY) / centerY) * -5;
+                const rotateY = ((x - centerX) / centerX) * 5;
+
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+            });
+
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)`;
+            });
+        });
+
+        // --- 4. TEXT SCRAMBLER EFFECT ---
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        function initTypewriter() {
+            const h1 = document.getElementById('main-title');
+            let iteration = 0;
+            const original = h1.dataset.value;
+            let interval = setInterval(() => {
+                h1.innerText = original.split("")
+                    .map((letter, index) => {
+                        if(index < iteration) return original[index];
+                        return letters[Math.floor(Math.random() * 36)]
+                    })
+                    .join("");
+                if(iteration >= original.length) clearInterval(interval);
+                iteration += 1/3;
+            }, 30);
+        }
+
+        // --- 5. SCROLL REVEAL & HUD ---
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if(entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.reveal-up').forEach(el => observer.observe(el));
+
+        window.addEventListener('scroll', () => {
+            const scrolled = (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100;
+            document.getElementById('scroll-bar').style.width = scrolled + '%';
+        });
+
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('hud-clock').innerHTML = 
+                `SYSTEM TIME: ${now.toLocaleTimeString()}<br>FPS: ${Math.floor(Math.random() * 10 + 55)}`;
+        }, 1000);
+
+        function scrollToId(id) {
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            if (body.getAttribute('data-theme') === 'matrix') {
+                body.removeAttribute('data-theme');
+            } else {
+                body.setAttribute('data-theme', 'matrix');
+            }
+        }
+    </script>
+</body>
+</html>
