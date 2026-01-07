@@ -397,7 +397,7 @@
         <div class="boot-text">INITIALIZING ANCIENT SCRIPTS...</div>
         <div class="boot-text">DECODING SANSKRIT DATA... [OK]</div>
         <div class="boot-text">LOADING TRANSLATIONS... [OK]</div>
-        <div class="boot-text">OPTIMIZING DISPLAY...</div>
+        <div class="boot-text">INITIALIZING GYROSCOPE SENSORS...</div>
         <div class="boot-text">ACCESS GRANTED.</div>
         <div class="loader-bar"><div class="loader-progress" id="load-bar"></div></div>
     </div>
@@ -512,7 +512,7 @@
                 <span class="q-num">10</span>
                 <div class="question">ટૂંકનોંધ: ક્રોધની શારીરિક અસરો</div>
                 <div class="answer">
-                   પિતામહ બ્રહ્માજી દુર્વાસા મુનિને ક્રોધના દુષ્પરિણામો સમજાવતા કહે છે કે ક્રોધ શારીરિક અને માનસિક રીતે માણસને બરબાદ કરે છે.
+                    પિતામહ બ્રહ્માજી દુર્વાસા મુનિને ક્રોધના દુષ્પરિણામો સમજાવતા કહે છે કે ક્રોધ શારીરિક અને માનસિક રીતે માણસને બરબાદ કરે છે.
 
 જ્યારે માણસ ક્રોધ કરે છે ત્યારે શરીરમાં આ મુજબ ફેરફાર થાય છે:
 
@@ -858,7 +858,7 @@
             });
         });
 
-        // --- 3. 3D TILT PHYSICS ---
+        // --- 3. 3D TILT PHYSICS (MOUSE) ---
         document.querySelectorAll('.q-card').forEach(card => {
             card.addEventListener('mousemove', (e) => {
                 const rect = card.getBoundingClientRect();
@@ -931,6 +931,54 @@
                 body.setAttribute('data-theme', 'matrix');
             }
         }
+
+        // --- 6. GYROSCOPE SUPPORT (MOBILE TILT) ---
+        // Hidden permission request for iOS 13+ on first interaction
+        document.body.addEventListener('click', async () => {
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                try {
+                    await DeviceOrientationEvent.requestPermission();
+                } catch (e) { console.error(e); }
+            }
+        }, { once: true });
+
+        // Logic for tilting all cards based on phone orientation
+        let lastBeta = 0;
+        let lastGamma = 0;
+        let ticking = false;
+
+        function updateTilt() {
+            const cards = document.querySelectorAll('.q-card');
+            
+            // Limit tilt range to keep it readable (Clamping)
+            let tiltX = Math.max(-20, Math.min(20, lastBeta)); 
+            let tiltY = Math.max(-20, Math.min(20, lastGamma));
+
+            const rotateX = tiltX * -1; // Inverted for natural 3D feel
+            const rotateY = tiltY * 1;
+
+            cards.forEach(card => {
+                // Only apply if not currently hovered (prevents conflict with mouse/touch-drag)
+                if (!card.matches(':hover')) {
+                     card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+                }
+            });
+            ticking = false;
+        }
+
+        window.addEventListener('deviceorientation', (e) => {
+            if (!ticking) {
+                window.requestAnimationFrame(updateTilt);
+                ticking = true;
+            }
+            // Beta is front-to-back tilt (-180 to 180). We subtract 45 to assume holding position.
+            // However, for generic parallax, raw relative tilt is often safer.
+            lastBeta = e.beta ? e.beta - 45 : 0; 
+            if (Math.abs(lastBeta) > 90) lastBeta = 0; // Prevent flipping if phone is flat/upside down
+
+            lastGamma = e.gamma || 0; // Left-to-right tilt (-90 to 90)
+        });
+
     </script>
 </body>
 </html>
