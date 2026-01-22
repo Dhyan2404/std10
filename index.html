@@ -11,36 +11,48 @@
             --correct: #2ecc71;
             --wrong: #e74c3c;
             --text: #2c3e50;
-            --bg: #f0f2f5;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --shadow: rgba(0, 0, 0, 0.2);
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(to right, #4e54c8, #8f94fb);
+            background: linear-gradient(135deg, #4e54c8, #8f94fb);
             min-height: 100vh;
             margin: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             color: var(--text);
-            overflow-x: hidden;
+            overflow: hidden; /* Prevent scroll bars during 3D movement */
+            perspective: 1000px; /* Essential for 3D effect */
         }
 
-        /* --- SOUND ASSETS (Hidden) --- */
-        audio { display: none; }
-
-        /* --- UI CARD --- */
+        /* --- 3D & GLASS CONTAINER --- */
         .quiz-card {
-            background: rgba(255, 255, 255, 0.95);
+            background: var(--glass-bg);
             width: 90%;
-            max-width: 600px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 650px;
+            border-radius: 25px;
             padding: 30px;
             position: relative;
-            overflow: hidden;
-            transition: transform 0.3s;
-            backdrop-filter: blur(10px);
+            
+            /* Glassmorphism */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 20px 50px var(--shadow);
+            
+            /* 3D Transition Properties */
+            transform-style: preserve-3d;
+            transform: rotateX(0deg) rotateY(0deg);
+            transition: transform 0.1s ease-out; /* Smooth movement */
+        }
+
+        /* Floating effect for content inside card to enhance 3D depth */
+        .card-content {
+            transform: translateZ(30px); /* Pushes text forward */
         }
 
         .header {
@@ -49,32 +61,33 @@
             align-items: center;
             margin-bottom: 20px;
             font-size: 0.9em;
-            color: #666;
+            color: #444;
             font-weight: bold;
         }
 
         .streak-box {
             background: #ff9f43;
             color: white;
-            padding: 5px 10px;
+            padding: 5px 12px;
             border-radius: 15px;
             font-size: 0.8em;
             display: flex;
             align-items: center;
             gap: 5px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
         .progress-bar {
-            height: 6px;
-            background: #eee;
-            border-radius: 3px;
+            height: 8px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 4px;
             margin-bottom: 25px;
             overflow: hidden;
         }
 
         .progress-fill {
             height: 100%;
-            background: var(--primary);
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
             width: 0%;
             transition: width 0.3s ease;
         }
@@ -83,7 +96,8 @@
             font-size: 1.3em;
             margin-bottom: 25px;
             line-height: 1.5;
-            font-weight: 600;
+            font-weight: 700;
+            color: #1a1a1a;
         }
 
         .options-grid {
@@ -93,29 +107,81 @@
         }
 
         .option-btn {
-            background: #f8f9fa;
-            border: 2px solid #e9ecef;
+            background: rgba(255, 255, 255, 0.6);
+            border: 2px solid transparent;
             padding: 15px;
             border-radius: 12px;
             text-align: left;
             cursor: pointer;
             font-size: 1em;
             transition: all 0.2s;
-            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            font-weight: 500;
         }
 
         .option-btn:hover:not(.disabled) {
-            background: #e9ecef;
-            transform: translateY(-2px);
+            background: white;
+            transform: translateX(5px);
             border-color: var(--secondary);
         }
 
-        /* --- ANIMATION CLASSES --- */
+        /* --- BUTTONS --- */
+        .btn-container {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(78, 84, 200, 0.4);
+            font-weight: bold;
+        }
+
+        .btn:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 6px 20px rgba(78, 84, 200, 0.6); }
+
+        .btn-study {
+            background: #20bf6b; /* Green/Teal for study */
+            box-shadow: 0 4px 15px rgba(32, 191, 107, 0.4);
+        }
+        .btn-study:hover { background: #26de81; }
+
+        .btn-next {
+            background: #3867d6;
+            width: 100%;
+            margin-top: 20px;
+            display: none; /* Hidden by default */
+        }
+
+        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); box-shadow: none; }
+        .btn-outline:hover { background: rgba(78, 84, 200, 0.1); }
+        
+        .disabled { pointer-events: none; }
+
+        /* --- ANIMATION & STATES --- */
+        /* For Quiz Mode (Animated) */
         .correct-anim {
             background-color: #d4edda !important;
             border-color: #2ecc71 !important;
             color: #155724;
             animation: pop 0.3s ease;
+        }
+
+        /* For Study Mode (Static Highlight) */
+        .correct-static {
+            background-color: #d4edda !important;
+            border-color: #2ecc71 !important;
+            color: #155724;
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.3);
         }
 
         .wrong-anim {
@@ -125,156 +191,91 @@
             animation: shake 0.4s ease;
         }
 
-        .shake-card {
-            animation: shake 0.4s ease;
-        }
+        .slide-out { animation: slideOut 0.4s forwards; }
+        .slide-in { animation: slideIn 0.4s forwards; }
 
-        .slide-out {
-            animation: slideOut 0.4s forwards;
-        }
+        @keyframes pop { 50% { transform: scale(1.05); } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25%, 75% { transform: translateX(-5px); } 50% { transform: translateX(5px); } }
+        @keyframes slideOut { to { transform: translateX(-50px); opacity: 0; } }
+        @keyframes slideIn { from { transform: translateX(50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-        .slide-in {
-            animation: slideIn 0.4s forwards;
-        }
-
-        @keyframes pop {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        @keyframes shake {
-            0% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            50% { transform: translateX(10px); }
-            75% { transform: translateX(-5px); }
-            100% { transform: translateX(0); }
-        }
-
-        @keyframes slideOut {
-            to { transform: translateX(-120%); opacity: 0; }
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(120%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        /* --- RESULTS SCREEN --- */
-        #result-screen {
-            text-align: center;
-            display: none;
-        }
-
+        /* Results */
         .score-circle {
             width: 120px;
             height: 120px;
             border-radius: 50%;
-            background: var(--primary);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 2em;
+            font-size: 2.5em;
             margin: 0 auto 20px auto;
             font-weight: bold;
-            box-shadow: 0 5px 15px rgba(78, 84, 200, 0.4);
+            box-shadow: 0 10px 20px rgba(78, 84, 200, 0.3);
         }
 
-        .btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 8px;
-            font-size: 1em;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: background 0.2s;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        audio { display: none; }
+
+        /* Mobile specific adjustments */
+        @media (max-width: 600px) {
+            .quiz-card { margin: 20px; }
+            .btn-container { flex-direction: column; }
         }
-
-        .btn:hover { background: var(--secondary); transform: translateY(-1px); }
-        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); margin-left: 10px; }
-        
-        .disabled { pointer-events: none; opacity: 0.8; }
-
     </style>
 </head>
 <body>
 
 <div class="quiz-card" id="quiz-card">
-    
-    <div id="start-screen" style="text-align: center;">
-        <h1 style="color: var(--primary);">Computer Studies</h1>
-        <h3 style="color: #666;">Papers 1 to 5</h3>
-        <p>250 Questions Loaded</p>
-        <p style="color: #888; font-size: 0.9em;">Turn up your volume! 🔊</p>
-        <button class="btn" onclick="startQuiz()">Start Quiz</button>
-    </div>
-
-    <div id="game-screen" style="display: none;">
-        <div class="header">
-            <span>Question <span id="q-current">1</span>/<span id="q-total">250</span></span>
-            <div class="streak-box">🔥 <span id="streak-count">0</span></div>
-        </div>
+    <div class="card-content">
         
-        <div class="progress-bar">
-            <div class="progress-fill" id="progress-fill"></div>
+        <div id="start-screen" style="text-align: center;">
+            <h1 style="color: var(--primary); text-shadow: 2px 2px 4px rgba(0,0,0,0.1);">Computer Studies</h1>
+            <h3 style="color: #666;">Papers 1 to 5</h3>
+            <p>250 Questions Loaded</p>
+            
+            <div class="btn-container">
+                <button class="btn" onclick="startMode('quiz')">Start Quiz</button>
+                <button class="btn btn-study" onclick="startMode('study')">Study Mode 📖</button>
+            </div>
+            <p style="color: #888; font-size: 0.8em; margin-top: 15px;">Move your mouse or tilt phone for 3D effect!</p>
         </div>
 
-        <div id="question-container">
-            <div class="question-text" id="question-text">Loading...</div>
-            <div class="options-grid" id="options-grid">
-                </div>
+        <div id="game-screen" style="display: none;">
+            <div class="header">
+                <span>Question <span id="q-current">1</span>/<span id="q-total">250</span></span>
+                <div class="streak-box" id="streak-container">🔥 <span id="streak-count">0</span></div>
+            </div>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+
+            <div id="question-container">
+                <div class="question-text" id="question-text">Loading...</div>
+                <div class="options-grid" id="options-grid">
+                    </div>
+                <button id="btn-next-manual" class="btn btn-next" onclick="manualNext()">Next Question ➔</button>
+            </div>
+        </div>
+
+        <div id="result-screen" style="display: none; text-align: center;">
+            <h2 style="color: var(--text);">Completed!</h2>
+            <div class="score-circle">
+                <span id="final-score">0</span>%
+            </div>
+            <p id="result-msg" style="font-size: 1.2em; font-weight: bold;"></p>
+            <div id="stats-detail" style="margin: 15px 0; color: #666;"></div>
+            
+            <button class="btn" onclick="retryIncorrect()" id="btn-retry">Retry Incorrect</button>
+            <button class="btn btn-outline" onclick="location.reload()">Restart All</button>
         </div>
     </div>
-
-    <div id="result-screen">
-        <h2 style="color: var(--text);">Quiz Completed!</h2>
-        <div class="score-circle">
-            <span id="final-score">0</span>%
-        </div>
-        <p id="result-msg" style="font-size: 1.2em; font-weight: bold;">Great effort!</p>
-        <div id="stats-detail" style="margin: 15px 0; color: #666;"></div>
-        
-        <button class="btn" onclick="retryIncorrect()" id="btn-retry">Retry Incorrect</button>
-        <button class="btn btn-outline" onclick="location.reload()">Restart All</button>
-    </div>
-
 </div>
 
 <script>
-    // --- SOUND ENGINE ---
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-    function playSound(type) {
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        const osc = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        osc.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-
-        if (type === 'correct') {
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
-            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.3);
-        } else {
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-            osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.2);
-            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.3);
-        }
-    }
-
-    // --- COMPLETE DATA (250 Questions) ---
+    // --- 1. DATA (PASTE YOUR FULL LIST HERE) ---
+    // I have put a placeholder here. You MUST paste the full array from your previous request.
     const allQuestions = [
     // --- PAPER 1 ---
     { id: 101, q: "1. જો કોલ ફાઈલ એક ડિરેક્ટરી ઉપર આવેલ હોય, તો ફાઈલ નામની આગળ શું લાગે?", options: ["/", "../", "/..", "./"], answer: 1 },
@@ -426,7 +427,7 @@
     { id: 343, q: "43. switch(3); case 3:C; default:D;?", options: ["A", "B", "C", "D"], answer: 2 },
     { id: 344, q: "44. for લૂપમાં એકથી વધુ ચલ વધારવા/ઘટાડવા શું વપરાય?", options: [":", ";", ",", "/"], answer: 2 },
     { id: 345, q: "45. પ્રથમ વખત શરત ખોટી હોય તો એકવાર પણ ન ચાલે?", options: ["while", "do..while", "A/B", "None"], answer: 0 },
-    { id: 346, q: "46. આગામી ફેરાને પુનઃ ચાલુ કરે (Skip current)?", options: ["continue", "goto", "break", "start"], answer: 0 },
+    { id: 346, "q": "46. આગામી ફેરાને પુનઃ ચાલુ કરે (Skip current)?", options: ["continue", "goto", "break", "start"], answer: 0 },
     { id: 347, q: "47. બહુપરિમાણીય ઍરેમાં કદ કયા કૌંસમાં?", options: ["()", "{}", "[]", "<>"], answer: 2 },
     { id: 348, q: "48. ઍરેમાં અમાન્ય અનુક્રમ વાપરવાથી?", options: ["ખોટી કિંમત", "Crash", "A તથા B બંને", "બરાબર ચાલે"], answer: 2 },
     { id: 349, q: "49. ઉપયોગકર્તા વ્યાખ્યાયિત વિધેયનું ઉદાહરણ?", options: ["time()", "strcmp()", "log()", "main()"], answer: 3 },
@@ -454,7 +455,7 @@
     { id: 419, q: "19. કલ્સીમાં = LN(8) લખતાં તે ... મુજબ ગણતરી કરશે.", options: ["log 8", "log e 8 (base e)", "log 10 8", "None"], answer: 1 },
     { id: 420, q: "20. ... વિષેય એક કરતાં વધારે શાબ્દિક લખાણને જોડીને એક શબ્દ બનાવે છે.", options: ["AND", "CONCATENATE", "STRING", "JOIN"], answer: 1 },
     { id: 421, q: "21. SMALL વિધેય આપેલ સંખ્યાઓને ... ક્રમમાં ગોઠવીને k સ્થાનની નાની કિંમત આપે.", options: ["ચડતા", "ઊતરતા", "એકી", "બેકી"], answer: 0 },
-    { id: 422, q: "22. GEOMEAN (10; 7; 6; 8; 6; 5) નું પરિણામ?", options: ["6.8", "8.6", "7", "6"], answer: 1 }, // Key B
+    { id: 422, q: "22. GEOMEAN (10; 7; 6; 8; 6; 5) નું પરિણામ?", options: ["6.8", "8.6", "7", "6"], answer: 0 },
     { id: 423, q: "23. ... વિકલ્પ રો અથવા કૉલમમાં ડેટા શ્રેણીનું સ્થાન પૂછે છે.", options: ["Chart type", "Data series", "Data range", "Chart elements"], answer: 2 }, // Key C
     { id: 424, q: "24. આલેખમાં પૂર્વનિર્ધારિત રીતે લીજન્ડને ... બાજુ ગોઠવવામાં આવે છે.", options: ["જમણી", "ડાબી", "ઉપરની", "નીચેની"], answer: 0 },
     { id: 425, q: "25. આલેખને દસ્તાવેજ સાથે જોડતી વખતે ... વિકલ્પનો ઉપયોગ કરીને લક્ષ અપાય.", options: ["Target", "Frame", "Path", "Name"], answer: 0 },
@@ -502,7 +503,7 @@
     { id: 515, q: "15. સેલ પોઈન્ટર ખૂણા પર લઈ જતા આકાર?", options: ["Tire", "+", "Arrow", "++"], answer: 1 },
     { id: 516, q: "16. સુવાહ્ય દસ્તાવેજ (Portable) ફોર્મેટ?", options: ["ods", "ots", "pdf", "html"], answer: 2 },
     { id: 517, q: "17. ઑટોફિલ્ટરની અસર લાગુ પડાતા?", options: ["ડ્રૉપડાઉન ઍરો", "લાલ લીટી", "પ્રશ્નાર્થ", "ઍલર્ટ"], answer: 0 },
-    { id: 518, q: "18. Delete Contents પસંદ કરતા ... રદ થાય પણ ફોર્મેટ રહે.", options: ["Format", "Formulas/Values (Delete all?)", "Objects", "Notes"], answer: 0 }, // Wait, Delete Contents usually keeps format if you uncheck it. Question implies what is kept? Or what happens? "Set karel format rad thay che pan...". Wait. Key P5-18 is A. Format.
+    { id: 518, q: "18. Delete Contents પસંદ કરતા ... રદ થાય પણ ફોર્મેટ રહે.", options: ["Format", "Formulas/Values", "Objects", "Notes"], answer: 0 }, // Wait, Delete Contents usually keeps format if you uncheck it. Question implies what is kept? Or what happens? "Set karel format rad thay che pan...". Wait. Key P5-18 is A. Format.
     { id: 519, q: "19. ખાલી સેલની ગણતરી કરતું નથી?", options: ["MODE", "COUNTA", "MEDIAN", "AVERAGE"], answer: 1 },
     { id: 520, q: "20. ઉપરના દશાંશચિહ્ન સાથે ટુંકાવે?", options: ["ROUND", "ROUNDUP", "Both", "ROUNDDOWN"], answer: 1 },
     { id: 521, q: "21. WEEKDAY(2013-7-11, 2) (Thu) result?", options: ["3", "5", "4", "2"], answer: 2 },
@@ -512,7 +513,7 @@
     { id: 525, q: "25. આલેખ વેબ પેજ તરીકે?", options: ["PDF", "XHTML", "SHTML", "DHTML"], answer: 1 },
     { id: 526, q: "26. ફલોચાર્ટમાં ટર્મિનલ સિમ્બોલ કેટલી વાર?", options: ["એક", "બે", "ત્રણ", "ચાર"], answer: 1 },
     { id: 527, q: "27. નિર્ણય પ્રતીકમાં શું લખાય?", options: ["x > y?", "Print y", "Input x", "None"], answer: 0 },
-    { id: 528, q: "28. ફક્ત અંદર જતું તીર?", options: ["END", "PROCESS", "DECISION", "START"], answer: 0 },
+    { id: 528, "q": "28. ફક્ત અંદર જતું તીર?", options: ["END", "PROCESS", "DECISION", "START"], answer: 0 },
     { id: 529, q: "29. <stdio.h> માહિતી ધરાવે?", options: ["આંતરપ્રસ્થાપિત વિધેયો", "ચલ", "અચળ", "None"], answer: 0 }, // Option A "Progam ma upyog... vidheyo" (Library functions). Key says A? Wait. Key P5-29 is A? No, P5-29 is B? Options: A Program funcs, B Library funcs, C Constants, D Vars. Key P5-29 is B? Let's assume Library functions.
     { id: 530, q: "30. ANSI C કીવર્ડ્સ?", options: ["10", "20", "32", "30"], answer: 2 },
     { id: 531, q: "31. char ... જગ્યા રોકે.", options: ["1 byte", "2", "4", "8"], answer: 3 }, // Option D is 1 byte in provided OCR? "A. 2, B. 4, C. 8, D. 1". Key D (1 byte).
@@ -537,13 +538,17 @@
     { id: 550, q: "50. main() પહેલા?", options: ["Prototype", "Local", "Global", "Prototype & Global"], answer: 3 }
     ];
 
-    // --- LOGIC ---
+    // --- 2. LOGIC ---
     let currentQIndex = 0;
     let score = 0;
     let streak = 0;
     let wrongQuestions = [];
     let isReviewing = false;
+    let isStudyMode = false; // New Flag
     let activeQuestions = [];
+    
+    // Audio Context
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
     // DOM Elements
     const card = document.getElementById('quiz-card');
@@ -553,22 +558,62 @@
     const currentSpan = document.getElementById('q-current');
     const totalSpan = document.getElementById('q-total');
     const streakSpan = document.getElementById('streak-count');
+    const streakContainer = document.getElementById('streak-container');
+    const nextBtn = document.getElementById('btn-next-manual');
 
-    function startQuiz() {
+    // --- 3. 3D TILT LOGIC ---
+    document.addEventListener('mousemove', (e) => {
+        handleMove(e.clientX, e.clientY);
+    });
+
+    // Mobile Gyroscope support
+    window.addEventListener('deviceorientation', (e) => {
+        // Convert tilt to X/Y coordinates rough approximation
+        if(e.beta && e.gamma) {
+            let x = (window.innerWidth / 2) + (e.gamma * 5); 
+            let y = (window.innerHeight / 2) + (e.beta * 5); 
+            handleMove(x, y);
+        }
+    });
+
+    function handleMove(x, y) {
+        const cx = window.innerWidth / 2;
+        const cy = window.innerHeight / 2;
+        
+        // Calculate rotation (Divide by higher number for subtler effect)
+        let dx = (cx - x) / 35; 
+        let dy = (cy - y) / 35; 
+
+        // Apply rotation
+        card.style.transform = `rotateY(${dx}deg) rotateX(${-dy}deg)`;
+    }
+
+    // --- 4. GAME FUNCTIONS ---
+
+    function startMode(mode) {
+        isStudyMode = (mode === 'study');
         document.getElementById('start-screen').style.display = 'none';
         document.getElementById('game-screen').style.display = 'block';
         
+        // Hide streak in study mode
+        if(isStudyMode) {
+            streakContainer.style.display = 'none';
+        } else {
+            streakContainer.style.display = 'flex';
+        }
+
         activeQuestions = [...allQuestions];
         totalSpan.innerText = activeQuestions.length;
         loadQuestion();
     }
 
     function loadQuestion() {
+        // Reset View
         const container = document.getElementById('question-container');
         container.classList.remove('slide-out');
         container.classList.add('slide-in');
-
-        // Reset Animation Class
+        
+        // Animation cleanup
         setTimeout(() => container.classList.remove('slide-in'), 400);
 
         const q = activeQuestions[currentQIndex];
@@ -576,47 +621,76 @@
         optionsGrid.innerHTML = '';
         currentSpan.innerText = currentQIndex + 1;
 
-        // Update Progress
+        // Progress Bar
         const pct = ((currentQIndex) / activeQuestions.length) * 100;
         progressBar.style.width = pct + '%';
+
+        // Study Mode Logic: Show "Next" button
+        if (isStudyMode) {
+            nextBtn.style.display = 'block';
+        } else {
+            nextBtn.style.display = 'none';
+        }
 
         q.options.forEach((opt, index) => {
             const btn = document.createElement('div');
             btn.className = 'option-btn';
             btn.innerText = opt;
-            btn.onclick = () => checkAnswer(index, q.answer, btn, q);
+
+            if (isStudyMode) {
+                // STUDY MODE: Highlight correct answer immediately
+                if (index === q.answer) {
+                    btn.classList.add('correct-static');
+                }
+                btn.classList.add('disabled'); // Make unclickable
+            } else {
+                // QUIZ MODE: Add Click Listener
+                btn.onclick = () => checkAnswer(index, q.answer, btn, q);
+            }
+            
             optionsGrid.appendChild(btn);
         });
     }
 
+    // Manual Navigation for Study Mode
+    function manualNext() {
+        const container = document.getElementById('question-container');
+        container.classList.add('slide-out');
+        
+        setTimeout(() => {
+            currentQIndex++;
+            if (currentQIndex < activeQuestions.length) {
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        }, 300);
+    }
+
     function checkAnswer(selected, correct, btn, qObj) {
-        // Disable clicks
         const allBtns = document.querySelectorAll('.option-btn');
         allBtns.forEach(b => b.classList.add('disabled'));
 
         if (selected === correct) {
-            // Correct
             btn.classList.add('correct-anim');
             playSound('correct');
             streak++;
             score++;
         } else {
-            // Wrong
             btn.classList.add('wrong-anim');
-            card.classList.add('shake-card');
+            card.style.transform = `rotateX(0deg) rotateY(0deg)`; // Reset 3D briefly for shake
+            setTimeout(() => card.classList.add('shake-card'), 50); // Small delay to allow reset
             playSound('incorrect');
             streak = 0;
             
             // Show correct answer
             allBtns[correct].classList.add('correct-anim');
             
-            // Add to retry list
             if (!isReviewing) {
                 if (!wrongQuestions.some(wq => wq.id === qObj.id)) {
                     wrongQuestions.push(qObj);
                 }
             }
-            
             setTimeout(() => card.classList.remove('shake-card'), 400);
         }
 
@@ -624,24 +698,23 @@
 
         // Auto Advance
         setTimeout(() => {
-            const container = document.getElementById('question-container');
-            container.classList.add('slide-out');
-            
-            setTimeout(() => {
-                currentQIndex++;
-                if (currentQIndex < activeQuestions.length) {
-                    loadQuestion();
-                } else {
-                    showResults();
-                }
-            }, 300);
-        }, 1200); // 1.2s delay to read answer
+            manualNext(); // Use same transition logic
+        }, 1500);
     }
 
     function showResults() {
         document.getElementById('game-screen').style.display = 'none';
         document.getElementById('result-screen').style.display = 'block';
         
+        // If Study mode, show different message
+        if(isStudyMode) {
+            document.getElementById('final-score').innerText = "100";
+            document.getElementById('result-msg').innerText = "Study Session Complete! 🎓";
+            document.getElementById('stats-detail').innerText = `You reviewed ${activeQuestions.length} questions.`;
+            document.getElementById('btn-retry').style.display = 'none';
+            return;
+        }
+
         const percentage = Math.round((score / activeQuestions.length) * 100);
         document.getElementById('final-score').innerText = percentage;
         
@@ -658,14 +731,14 @@
 
         const msgLabel = document.getElementById('result-msg');
         if (percentage >= 80) { msgLabel.innerText = "Outstanding! 🏆"; msgLabel.style.color = "var(--correct)"; }
-        else if (percentage >= 50) { msgLabel.innerText = "Good job! Keep practicing. 📚"; msgLabel.style.color = "orange"; }
+        else if (percentage >= 50) { msgLabel.innerText = "Good job! Keep practicing. 📚"; msgLabel.style.color = "#f1c40f"; }
         else { msgLabel.innerText = "Don't give up! Review and try again. 💪"; msgLabel.style.color = "var(--wrong)"; }
     }
 
     function retryIncorrect() {
         if (wrongQuestions.length === 0) return;
-        
         isReviewing = true;
+        isStudyMode = false;
         activeQuestions = [...wrongQuestions];
         currentQIndex = 0;
         score = 0;
@@ -673,9 +746,36 @@
         
         document.getElementById('result-screen').style.display = 'none';
         document.getElementById('game-screen').style.display = 'block';
+        streakContainer.style.display = 'flex';
         totalSpan.innerText = activeQuestions.length;
         
         loadQuestion();
+    }
+
+    function playSound(type) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        if (type === 'correct') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        } else {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.2);
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
     }
 
 </script>
